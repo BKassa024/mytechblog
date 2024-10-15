@@ -1,0 +1,48 @@
+name: Trigger auto deployment for brook-containerapp-1
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ main ]
+    paths:
+    - '**'
+    - '.github/workflows/brook-containerapp-1-AutoDeployTrigger-35769c89-c250-44aa-ab3e-4722a9735744.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+      contents: read #Required when GH token is used to authenticate with private repo
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.BROOKCONTAINERAPP1_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.BROOKCONTAINERAPP1_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.BROOKCONTAINERAPP1_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }}
+          _dockerfilePathKey_: _dockerfilePath_
+          registryUrl: 
+          registryUsername: ${{ secrets.BROOKCONTAINERAPP1_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.BROOKCONTAINERAPP1_REGISTRY_PASSWORD }}
+          containerAppName: brook-containerapp-1
+          resourceGroup: RG1
+          imageToBuild: default/[parameters('containerAppName')]:${{ github.sha }}
+          _buildArgumentsKey_: |
+            _buildArgumentsValues_
+
+
